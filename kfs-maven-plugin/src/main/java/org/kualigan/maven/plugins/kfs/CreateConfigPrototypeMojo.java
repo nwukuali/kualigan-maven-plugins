@@ -1,12 +1,15 @@
 package org.kualigan.maven.plugins.kfs;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.codehaus.plexus.archiver.UnixStat;
 import org.codehaus.plexus.archiver.util.DefaultFileSet;
 import org.codehaus.plexus.archiver.zip.ZipArchiver;
+import org.kualigan.maven.plugins.api.PrototypeHelper;
 
 import java.io.*;
 import java.util.*;
@@ -22,7 +25,10 @@ import java.util.regex.Pattern;
 	name = "create-config-prototype",
 	requiresProject = false
 )
-public class CreateConfigPrototypeMojo {
+public class CreateConfigPrototypeMojo extends AbstractMojo {
+
+	@Component
+	private PrototypeHelper helper;
 
 	@Parameter(property = "workingDir", required = false, defaultValue = "./")
 	private File workingDir;
@@ -42,6 +48,12 @@ public class CreateConfigPrototypeMojo {
 	@Parameter(property = "version", defaultValue = "5.0")
 	protected String version;
 
+	/**
+	 * The {@code M2_HOME} parameter to use for forked Maven invocations.
+	 */
+	@Parameter(defaultValue = "${maven.home}")
+	protected File mavenHome;
+
 	private Map<String, Properties> templateProperties;
 	private Map<String, Properties> resolvedProperties;
 	private static final String DEFAULT_PROPERTIES = "kfs";
@@ -49,38 +61,64 @@ public class CreateConfigPrototypeMojo {
 	public static final String ZIP_PROPERTIES_PATH = System.getProperty("java.io.tmpdir") + File.separator + "config-properties.zip";
 
 	public void execute() throws MojoExecutionException {
+		helper.setCaller(this);
 		verifyWorkingDir();
 		loadTemplateProperties();
 		resolveProperties();
 		File propertiesFolder = writeResolvedPropertiesToFiles();
 		File zipFile = zipResolvedPropertyFiles(propertiesFolder);
-	 	installArtifact(zipFile);
+		installArtifact(zipFile);
 	}
 
-	private void installArtifact(File zipArtifact) {
-
-	}
-
-	private File zipResolvedPropertyFiles(File propertiesFolder) throws MojoExecutionException {
-		ZipArchiver zipArchiver = new ZipArchiver();
-		final DefaultFileSet fileSet = new DefaultFileSet();
-		fileSet.setDirectory(propertiesFolder.getParentFile());
-		fileSet.setIncludingEmptyDirectories(true);
-		zipArchiver.addFileSet(fileSet);
-		final File zipFile = new File(ZIP_PROPERTIES_PATH);
-		zipFile.deleteOnExit();
-		zipArchiver.setDestFile(zipFile);
-		zipArchiver.setDirectoryMode(UnixStat.DIR_FLAG);
-		try {
-			zipArchiver.createArchive();
-		} catch (Exception e) {
-			throw new MojoExecutionException("Unable to zip property files", e);
+	private void verifyWorkingDir() throws MojoExecutionException {
+		if (!workingDir.exists()) {
+			throw new MojoExecutionException("Working dir does not exist - " + workingDir.getAbsolutePath());
 		}
-		return zipFile;
+		if (!workingDir.isDirectory()) {
+			throw new MojoExecutionException("Working dir specified is not a directory - " + workingDir.getAbsolutePath());
+		}
+		File propertiesDir = getPropertiesDir();
+		if (!propertiesDir.exists()) {
+			throw new MojoExecutionException("Invalid Working dir specified - Does not contain build/properties sub directory.");
+		}
+		File configFile = getMainConfig();
+		if (!configFile.exists()) {
+			throw new MojoExecutionException("Invalid Working dir specified - Configuration file 'work/src/configuration.properties' does not exist");
+		}
 	}
+
+	private void loadTemplateProperties() throws MojoExecutionException {
+		try {
+			getLog().info("Loading template build time properties");
+			templateProperties = new HashMap<String, Properties>();
+			Properties masterConfigProperties = loadProperties(getMainConfig());
+			templateProperties.put(DEFAULT_PROPERTIES, masterConfigProperties);
+			for (File propertiesFile : getPropertiesDir().listFiles(new FilenameFilter())) {
+				Properties subProperties = loadProperties(propertiesFile);
+				templateProperties.put(propertiesFile.getName(), subProperties);
+			}
+		} catch (IOException e) {
+			throw new MojoExecutionException("Unable to load template property files", e);
+		}
+	}
+
+	private void resolveProperties() {
+		getLog().info("Resolving template build time properties");
+		resolvedProperties = new HashMap<String, Properties>();
+		final String propertyCategory = DEFAULT_PROPERTIES;
+		Properties defaultProperties = templateProperties.get(propertyCategory);
+		for (Object key : defaultProperties.keySet()) {
+			final String value = (String) defaultProperties.get(key);
+			List<String> unresolvedSubProperties = listUnresolvedSubProperties(value);
+			resolveSubProperties(unresolvedSubProperties);
+			addResolvedProperty(propertyCategory, key, value);
+		}
+	}
+
 
 	private File writeResolvedPropertiesToFiles() throws MojoExecutionException {
 		try {
+			getLog().info("Converting build time properties to runtime xml properties");
 			File tempZipFolder = new File(System.getProperty("java.io.tmpdir") + File.separator + "props" + File.separator + "META-INF");
 			tempZipFolder.mkdirs();
 			tempZipFolder.deleteOnExit();
@@ -104,23 +142,41 @@ public class CreateConfigPrototypeMojo {
 		}
 	}
 
+	private File zipResolvedPropertyFiles(File propertiesFolder) throws MojoExecutionException {
+		getLog().info("Zipping runtime properties");
+		ZipArchiver zipArchiver = new ZipArchiver();
+		final DefaultFileSet fileSet = new DefaultFileSet();
+		fileSet.setDirectory(propertiesFolder.getParentFile());
+		fileSet.setIncludingEmptyDirectories(true);
+		zipArchiver.addFileSet(fileSet);
+		final File zipFile = new File(ZIP_PROPERTIES_PATH);
+		zipFile.deleteOnExit();
+		zipArchiver.setDestFile(zipFile);
+		zipArchiver.setDirectoryMode(UnixStat.DIR_FLAG);
+		try {
+			zipArchiver.createArchive();
+		} catch (Exception e) {
+			throw new MojoExecutionException("Unable to zip property files", e);
+		}
+		return zipFile;
+	}
+
+	private void installArtifact(File zipArtifact) throws MojoExecutionException {
+		getLog().info("Installing properties");
+		helper.installArtifact(zipArtifact,
+			null,
+			mavenHome,
+			groupId,
+			artifactId,
+			version,
+			null);
+	}
+
 	private String getPropertyFileName(String propertyCategory) {
 		if (propertyCategory.endsWith(".properties")) {
 			propertyCategory = propertyCategory.substring(0, propertyCategory.indexOf(".properties"));
 		}
 		return propertyCategory + "-defaults.xml";
-	}
-
-	private void resolveProperties() {
-		resolvedProperties = new HashMap<String, Properties>();
-		final String propertyCategory = DEFAULT_PROPERTIES;
-		Properties defaultProperties = templateProperties.get(propertyCategory);
-		for (Object key : defaultProperties.keySet()) {
-			final String value = (String) defaultProperties.get(key);
-			List<String> unresolvedSubProperties = listUnresolvedSubProperties(value);
-			resolveSubProperties(unresolvedSubProperties);
-			addResolvedProperty(propertyCategory, key, value);
-		}
 	}
 
 	private void resolveSubProperties(List<String> unresolvedSubProperties) {
@@ -162,19 +218,6 @@ public class CreateConfigPrototypeMojo {
 		return result;
 	}
 
-	private void loadTemplateProperties() throws MojoExecutionException {
-		try {
-			templateProperties = new HashMap<String, Properties>();
-			Properties masterConfigProperties = loadProperties(getMainConfig());
-			templateProperties.put(DEFAULT_PROPERTIES, masterConfigProperties);
-			for (File propertiesFile : getPropertiesDir().listFiles(new FilenameFilter())) {
-				Properties subProperties = loadProperties(propertiesFile);
-				templateProperties.put(propertiesFile.getName(), subProperties);
-			}
-		} catch (IOException e) {
-			throw new MojoExecutionException("Unable to load template property files", e);
-		}
-	}
 
 	private Properties loadProperties(File propertiesFile) throws IOException {
 		Properties props = new Properties();
@@ -184,22 +227,6 @@ public class CreateConfigPrototypeMojo {
 		return props;
 	}
 
-	private void verifyWorkingDir() throws MojoExecutionException {
-		if (!workingDir.exists()) {
-			throw new MojoExecutionException("Working dir does not exist - " + workingDir.getAbsolutePath());
-		}
-		if (!workingDir.isDirectory()) {
-			throw new MojoExecutionException("Working dir specified is not a directory - " + workingDir.getAbsolutePath());
-		}
-		File propertiesDir = getPropertiesDir();
-		if (!propertiesDir.exists()) {
-			throw new MojoExecutionException("Invalid Working dir specified - Does not contain build/properties sub directory.");
-		}
-		File configFile = getMainConfig();
-		if (!configFile.exists()) {
-			throw new MojoExecutionException("Invalid Working dir specified - Configuration file 'work/src/configuration.properties' does not exist");
-		}
-	}
 
 	private File getMainConfig() {
 		return new File(workingDir, "build/project/configuration.properties");
