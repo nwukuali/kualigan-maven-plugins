@@ -15,6 +15,11 @@
  */
 package org.kualigan.maven.plugins.kfs;
 
+import org.apache.commons.io.IOUtils;
+import org.apache.velocity.VelocityContext;
+import org.apache.velocity.app.Velocity;
+import org.apache.velocity.context.Context;
+import org.kualigan.maven.plugins.api.InstallArtifactRequest;
 import org.kualigan.maven.plugins.api.PrototypeHelper;
 
 import org.apache.commons.cli.CommandLine;
@@ -58,11 +63,7 @@ import org.codehaus.plexus.util.IOUtil;
 import org.codehaus.plexus.util.StringUtils;
 import org.codehaus.plexus.util.cli.CommandLineUtils;
 
-import java.io.DataInputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.FileWriter;
-import java.io.InputStream;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -205,29 +206,49 @@ public class CreatePrototypeMojo extends AbstractMojo {
             }*/
             
             final File prototypeJar = helper.repack(file, artifactId);
-            helper.extractTempPom();
-            helper.installArtifact(file, null, 
-                                   getMavenHome(), 
-                                   groupId, 
-                                   artifactId, 
-                                   version, 
-                                   repositoryId);
-            helper.installArtifact(prototypeJar, 
-                                   sources, 
-                                   getMavenHome(), 
-                                   groupId, 
-                                   artifactId, 
-                                   version, 
-                                   repositoryId);
-
-        } 
+						helper.installArtifact(InstallArtifactRequest.createParent(getMavenHome(), generatePom(map), groupId, artifactId, version));
+						helper.installArtifact(InstallArtifactRequest.createOverlay(getMavenHome(), file, groupId, artifactId, version));
+            helper.installArtifact(InstallArtifactRequest.createCore(getMavenHome(), prototypeJar, groupId, artifactId, version, sources));
+        }
         catch (Exception e) {
             throw new MojoExecutionException("Failed to create a new KFS Prototype",e);
         }
     }
-    
-    
-    public void setMavenHome(final File mavenHome) {
+
+	private File generatePom(Map<String, String> artifactProperties) throws MojoExecutionException{
+		//TODO: Consolidate extractTempPom & filterTempPom and make this more generic!!
+		helper.extractTempPom();
+		return filterPrototypePom(artifactProperties);
+	}
+
+	private File filterPrototypePom(Map<String, String> properties) throws MojoExecutionException {
+		Writer writer = null;
+		Reader reader = null;
+		try {
+			final File pomFile = new File(System.getProperty("java.io.tmpdir") + File.separator + "filtered-pom.xml");
+			Context context = new VelocityContext();
+			context.put("groupId", properties.get("groupId"));
+			context.put("artifactId", properties.get("artifactId"));
+			context.put("version", properties.get("version"));
+			context.put("packaging", "pom");
+
+			writer = new FileWriter(pomFile);
+			reader = new FileReader(new File(System.getProperty("java.io.tmpdir") + File.separator + "pom.xml"));
+
+			Velocity.init();
+			Velocity.evaluate(context, writer, "pom-prototype", reader);
+
+			return pomFile;
+		} catch (Exception e) {
+			throw new MojoExecutionException("Error trying to filter the pom ", e);
+		} finally {
+			IOUtils.closeQuietly(reader);
+			IOUtils.closeQuietly(writer);
+		}
+	}
+
+
+	public void setMavenHome(final File mavenHome) {
         this.mavenHome = mavenHome;
     }
     
