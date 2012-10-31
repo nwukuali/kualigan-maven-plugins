@@ -4,7 +4,7 @@ import java.io.File;
 
 public class InstallArtifactRequest {
 
-	enum ArtifactType {CORE, OVERLAY, PARENT;}
+	enum ArtifactType {CORE, OVERLAY, PARENT, CONFIG}
 
 	private File mavenHome;
 	private File artifact;
@@ -28,6 +28,10 @@ public class InstallArtifactRequest {
 
 	public static InstallArtifactRequest createParent(File mavenHome, File artifact, String groupId, String artifactId, String version) {
 		return new InstallArtifactRequest(ArtifactType.PARENT, mavenHome, artifact, groupId, artifactId, version);
+	}
+
+	public static InstallArtifactRequest createConfig(File mavenHome, File artifact, String groupId, String artifactId, String version) {
+		return new InstallArtifactRequest(ArtifactType.CONFIG, mavenHome, artifact, groupId, artifactId, version);
 	}
 
 	private InstallArtifactRequest(ArtifactType artifactType, File mavenHome, File artifact, String groupId, String artifactId, String version) {
@@ -81,6 +85,7 @@ public class InstallArtifactRequest {
 			case CORE: return "jar";
 			case OVERLAY: return "war";
 			case PARENT: return "pom";
+			case CONFIG: return "jar";
 			default: return "undefined";
 		}
 	}

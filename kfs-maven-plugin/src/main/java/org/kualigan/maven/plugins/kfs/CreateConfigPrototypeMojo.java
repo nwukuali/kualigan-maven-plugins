@@ -9,6 +9,7 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.codehaus.plexus.archiver.UnixStat;
 import org.codehaus.plexus.archiver.util.DefaultFileSet;
 import org.codehaus.plexus.archiver.zip.ZipArchiver;
+import org.kualigan.maven.plugins.api.InstallArtifactRequest;
 import org.kualigan.maven.plugins.api.PrototypeHelper;
 
 import java.io.*;
@@ -162,14 +163,8 @@ public class CreateConfigPrototypeMojo extends AbstractMojo {
 	}
 
 	private void installArtifact(File zipArtifact) throws MojoExecutionException {
-		getLog().info("Installing properties");
-		helper.installArtifact(zipArtifact,
-			null,
-			mavenHome,
-			groupId,
-			artifactId,
-			version,
-			null);
+		getLog().info("Installing properties as maven artifact");
+		helper.installArtifact(InstallArtifactRequest.createConfig(mavenHome,zipArtifact,groupId,artifactId,version));
 	}
 
 	private String getPropertyFileName(String propertyCategory) {
