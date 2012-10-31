@@ -492,7 +492,7 @@ public class DefaultPrototypeHelper implements PrototypeHelper {
      * 
      * @param artifact {@link File} instance to install
      */
-    public void installArtifact(final File artifact, 
+    public void installArtifact(final File artifact,
                                 final File sources,
                                 final File mavenHome,
                                 final String groupId,
@@ -500,11 +500,11 @@ public class DefaultPrototypeHelper implements PrototypeHelper {
                                 final String version,
                                 final String repositoryId) throws MojoExecutionException {
 //        extractBuildXml();
-    
+
         filterTempPom(groupId, artifactId, artifact.getName().endsWith("jar") ? "jar" : "war", version);
 
         final Invoker invoker = new DefaultInvoker().setMavenHome(mavenHome);
-        
+
         final String additionalArguments = "";
 
         getCaller().getLog().debug("Setting up properties for installing the artifact");
@@ -554,7 +554,7 @@ public class DefaultPrototypeHelper implements PrototypeHelper {
                     throw new MojoExecutionException("Error executing Maven.",
                                                      invocationResult.getExecutionException());
                 }
-                    
+
                 if (invocationResult.getExitCode() != 0) {
                     throw new MojoExecutionException(
                         "Maven execution failed, exit code: \'" + invocationResult.getExitCode() + "\'");
@@ -606,7 +606,85 @@ public class DefaultPrototypeHelper implements PrototypeHelper {
 			}
 		}
 
-    /**
+
+	public void installArtifact(InstallArtifactRequest installArtifactRequest) throws MojoExecutionException {
+		final Invoker invoker = new DefaultInvoker().setMavenHome(installArtifactRequest.getMavenHome());
+		final String additionalArguments = "";
+		getCaller().getLog().debug("Setting up properties for installing the artifact");
+		Properties invocationRequestProperties = createInvocationRequestProperties(installArtifactRequest);
+		final InvocationRequest req = new DefaultInvocationRequest()
+			.setInteractive(false)
+			.setProperties(invocationRequestProperties);
+
+		getCaller().getLog().debug("Properties used for installArtifact are:");
+		try {
+			req.getProperties().list(System.out);
+		} catch (Exception e) {
+		}
+
+		try {
+			setupRequest(req, additionalArguments);
+
+			if (installArtifactRequest.getRepositoryId() == null) {
+				req.setGoals(new ArrayList<String>() {{
+					add("install:install-file");
+				}});
+			} else {
+				req.setGoals(new ArrayList<String>() {{
+					add("deploy:deploy-file");
+				}});
+			}
+
+			try {
+				final InvocationResult invocationResult = invoker.execute(req);
+
+				if (invocationResult.getExecutionException() != null) {
+					throw new MojoExecutionException("Error executing Maven.",
+						invocationResult.getExecutionException());
+				}
+
+				if (invocationResult.getExitCode() != 0) {
+					throw new MojoExecutionException(
+						"Maven execution failed, exit code: \'" + invocationResult.getExitCode() + "\'");
+				}
+			} catch (MavenInvocationException e) {
+				throw new MojoExecutionException("Failed to invoke Maven build.", e);
+			}
+		} finally {
+			/*
+										if ( settingsFile != null && settingsFile.exists() && !settingsFile.delete() )
+										{
+										settingsFile.deleteOnExit();
+										}
+									*/
+		}
+	}
+
+	private Properties createInvocationRequestProperties(InstallArtifactRequest request) throws MojoExecutionException {
+		try {
+			Properties result = new Properties();
+			result.put("updateReleaseInfo", String.valueOf(true));
+			result.put("file", request.getArtifact().getCanonicalPath());
+			result.put("groupId", request.getGroupId());
+			result.put("artifactId", request.getArtifactId());
+			result.put("version", request.getVersion());
+			result.put("packaging", request.getPackaging());
+			result.put("generatePom", request.getGeneratePom());
+
+			if (request.getRepositoryId() != null) {
+				result.put("repositoryId", request.getRepositoryId());
+			}
+			if (request.getSources() != null) {
+				result.put("sources", zipSourcesIfRequired(request.getSources()).getCanonicalPath());
+			}
+			return result;
+		} catch (Exception e) {
+			throw new MojoExecutionException("Unable to create invocation request properties ", e);
+		}
+	}
+
+
+	/**
      * Temporary POM location
      * 
      * @return String value the path of the temporary POM
