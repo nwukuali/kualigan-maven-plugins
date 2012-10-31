@@ -71,21 +71,5 @@
     <developerConnection>scm:git:ssh://git@github.com/r351574nc3/kualigan-maven-plugins.git</developerConnection>
     <url>https://github.com/r351574nc3/kualigan-maven-plugins</url>
   </scm>
-    
-  <distributionManagement>
-    <repository>
-      <id>sonatype-nexus-staging</id>
-      <url>https://oss.sonatype.org/service/local/staging/deploy/maven2</url>
-    </repository>
-    <snapshotRepository>
-      <id>sonatype-nexus-snapshots</id>
-      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-    </snapshotRepository>
-    <site>
-      <id>kuali.site</id>
-      <name>Kuali Maven Site</name>
-      <url>${kuali.site.publish.url}/kuali-common/kfs-common</url>
-    </site>
-    <downloadUrl>${kuali.site.download.url}</downloadUrl>
-  </distributionManagement>  
+
 </project>

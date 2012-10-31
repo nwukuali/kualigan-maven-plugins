@@ -411,18 +411,12 @@
 
   <distributionManagement>
     <repository>
-      <id>sonatype-nexus-staging</id>
-      <url>https://oss.sonatype.org/service/local/staging/deploy/maven2</url>
+      <id>nexus-release</id>
+      <url>http://kualidev.nwu.ac.za:8082/nexus/content/repositories/releases</url>
     </repository>
     <snapshotRepository>
-      <id>sonatype-nexus-snapshots</id>
-      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+      <id>nexus-snapshots</id>
+      <url>http://kualidev.nwu.ac.za:8082/nexus/content/repositories/snapshots</url>
     </snapshotRepository>
-    <site>
-      <id>kuali.site</id>
-      <name>Kuali Maven Site</name>
-      <url>${kuali.site.publish.url}/kuali-common/kfs-common</url>
-    </site>
-    <downloadUrl>${kuali.site.download.url}</downloadUrl>
-  </distributionManagement>  
+  </distributionManagement>
 </project>  
