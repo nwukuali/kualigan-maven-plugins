@@ -492,43 +492,42 @@ public class DefaultPrototypeHelper implements PrototypeHelper {
      * 
      * @param artifact {@link File} instance to install
      */
-    public void installArtifact(final File artifact,
+    public void installArtifact(final File artifact, 
                                 final File sources,
                                 final File mavenHome,
                                 final String groupId,
                                 final String artifactId,
                                 final String version,
                                 final String repositoryId) throws MojoExecutionException {
-//        extractBuildXml();
-
+    
         filterTempPom(groupId, artifactId, artifact.getName().endsWith("jar") ? "jar" : "war", version);
 
         final Invoker invoker = new DefaultInvoker().setMavenHome(mavenHome);
-
+        
         final String additionalArguments = "";
 
         getCaller().getLog().debug("Setting up properties for installing the artifact");
         final InvocationRequest req = new DefaultInvocationRequest()
             .setInteractive(false)
             .setProperties(new Properties() {{
-							setProperty("pomFile", getTempPomPath());
-							if (repositoryId != null) {
-								setProperty("repositoryId", repositoryId);
-							}
-							if (sources != null) {
-								try {
-									setProperty("sources", zipSourcesIfRequired(sources).getCanonicalPath());
-								} catch (Exception e) {
-									throw new MojoExecutionException("Cannot get path for the sources file ", e);
-								}
-							}
-							try {
-								setProperty("file", artifact.getCanonicalPath());
-							} catch (Exception e) {
-								throw new MojoExecutionException("Cannot get path for the war file ", e);
-							}
-							setProperty("updateReleaseInfo", "true");
-						}});
+                                                        setProperty("pomFile", getTempPomPath());
+                                                        if (repositoryId != null) {
+                                                                setProperty("repositoryId", repositoryId);
+                                                        }
+                                                        if (sources != null) {
+                                                                try {
+                                                                        setProperty("sources", zipSourcesIfRequired(sources).getCanonicalPath());
+                                                                } catch (Exception e) {
+                                                                        throw new MojoExecutionException("Cannot get path for the sources file ", e);
+                                                                }
+                                                        }
+                                                        try {
+                                                                setProperty("file", artifact.getCanonicalPath());
+                                                        } catch (Exception e) {
+                                                                throw new MojoExecutionException("Cannot get path for the war file ", e);
+                                                        }
+                                                        setProperty("updateReleaseInfo", "true");
+                                                }});
 
         getCaller().getLog().debug("Properties used for installArtifact are:");
         try {
@@ -554,7 +553,7 @@ public class DefaultPrototypeHelper implements PrototypeHelper {
                     throw new MojoExecutionException("Error executing Maven.",
                                                      invocationResult.getExecutionException());
                 }
-
+                    
                 if (invocationResult.getExitCode() != 0) {
                     throw new MojoExecutionException(
                         "Maven execution failed, exit code: \'" + invocationResult.getExitCode() + "\'");
@@ -578,34 +577,36 @@ public class DefaultPrototypeHelper implements PrototypeHelper {
      * Executes the {@code install-file} goal with the new pom against the artifact file.
      * 
      */
-		public void filterTempPom(final String groupId,
-															final String artifactId,
-															final String packaging,
-															final String version) throws MojoExecutionException {
-			getCaller().getLog().info("Filtering the Temp POM");
-
-			Writer writer = null;
-			Reader reader = null;
-			try {
-				Context context = new VelocityContext();
-				context.put("groupId", groupId);
-				context.put("artifactId", artifactId);
-				context.put("packaging", packaging);
-				context.put("version", version);
-
-				writer = new FileWriter(System.getProperty("java.io.tmpdir") + File.separator + "pom.xml");
-				reader = new FileReader(new File(System.getProperty("java.io.tmpdir") + File.separator + "prototype-pom.xml"));
-
-				Velocity.init();
-				Velocity.evaluate(context, writer, "pom-prototype", reader);
-			} catch (Exception e) {
-				throw new MojoExecutionException("Error trying to filter the pom ", e);
-			} finally {
-				IOUtils.closeQuietly(reader);
-				IOUtils.closeQuietly(writer);
-			}
-		}
-
+    public void filterTempPom(final String groupId,
+			      final String artifactId,
+			      final String packaging,
+			      final String version) throws MojoExecutionException {
+	getCaller().getLog().info("Filtering the Temp POM");
+	
+	Writer writer = null;
+	Reader reader = null;
+	try {
+	    Context context = new VelocityContext();
+	    context.put("groupId", groupId);
+	    context.put("artifactId", artifactId);
+	    context.put("packaging", packaging);
+	    context.put("version", version);
+	    
+	    writer = new FileWriter(System.getProperty("java.io.tmpdir") + File.separator + "pom.xml");
+	    reader = new FileReader(new File(System.getProperty("java.io.tmpdir") + File.separator + "prototype-pom.xml"));
+	    
+	    Velocity.init();
+	    Velocity.evaluate(context, writer, "pom-prototype", reader);
+	} 
+	catch (Exception e) {
+	    throw new MojoExecutionException("Error trying to filter the pom ", e);
+	} 
+	finally {
+	    IOUtils.closeQuietly(reader);
+	    IOUtils.closeQuietly(writer);
+	}
+    }
+    
 
 	public void installArtifact(InstallArtifactRequest installArtifactRequest) throws MojoExecutionException {
 		final Invoker invoker = new DefaultInvoker().setMavenHome(installArtifactRequest.getMavenHome());
@@ -663,7 +664,7 @@ public class DefaultPrototypeHelper implements PrototypeHelper {
 	private Properties createInvocationRequestProperties(InstallArtifactRequest request) throws MojoExecutionException {
 		try {
 			Properties result = new Properties();
-			result.put("updateReleaseInfo", String.valueOf(true));
+			result.put("updateReleaseInfo", "true");
 			result.put("file", request.getArtifact().getCanonicalPath());
 			result.put("groupId", request.getGroupId());
 			result.put("artifactId", request.getArtifactId());
@@ -684,55 +685,13 @@ public class DefaultPrototypeHelper implements PrototypeHelper {
 	}
 
 
-	/**
+    /**
      * Temporary POM location
      * 
      * @return String value the path of the temporary POM
      */
     protected String getTempPomPath() {
         return System.getProperty("java.io.tmpdir") + File.separator + "pom.xml";
-    }
-    
-    /**
-     * Puts ant build file in the system temp directory. build.xml is extracted
-     * from the plugin.
-     */
-    public void extractBuildXml() throws MojoExecutionException {
-        getCaller().getLog().info("Extracting the build.xml");
-        
-        final InputStream pom_is = getClass().getClassLoader().getResourceAsStream("prototype-resources/build.xml");
-        
-        byte[] fileBytes = null;
-        try {
-            final DataInputStream dis = new DataInputStream(pom_is);
-            fileBytes = new byte[dis.available()];
-            dis.readFully(fileBytes);
-            dis.close();
-        }
-        catch (Exception e) {
-            throw new MojoExecutionException("Wasn't able to read in the prototype pom", e);
-        }
-        finally {
-            try {
-                pom_is.close();
-            }
-            catch (Exception e) {
-                // Ignore exceptions
-            }
-        }
-        
-        try {
-            final FileOutputStream fos = new FileOutputStream(System.getProperty("java.io.tmpdir") + File.separator + "build.xml");
-            try {
-                fos.write(fileBytes);
-            }
-            finally {
-                fos.close();
-            }
-        }
-        catch (Exception e) {
-            throw new MojoExecutionException("Could not write temporary pom file", e);
-        }
     }
 
     /**
