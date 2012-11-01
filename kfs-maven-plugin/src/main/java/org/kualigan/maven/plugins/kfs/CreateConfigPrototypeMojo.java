@@ -29,10 +29,10 @@ import java.util.regex.Pattern;
 public class CreateConfigPrototypeMojo extends AbstractMojo {
 
 	@Component
-	private PrototypeHelper helper;
+	protected PrototypeHelper helper;
 
 	@Parameter(property = "workingDir", required = false, defaultValue = "./")
-	private File workingDir;
+	protected File workingDir;
 
 	/**
 	 */
@@ -70,6 +70,7 @@ public class CreateConfigPrototypeMojo extends AbstractMojo {
 		File zipFile = zipResolvedPropertyFiles(propertiesFolder);
 		installArtifact(zipFile);
 	}
+
 
 	private void verifyWorkingDir() throws MojoExecutionException {
 		if (!workingDir.exists()) {
@@ -110,9 +111,9 @@ public class CreateConfigPrototypeMojo extends AbstractMojo {
 		Properties defaultProperties = templateProperties.get(propertyCategory);
 		for (Object key : defaultProperties.keySet()) {
 			final String value = (String) defaultProperties.get(key);
-			List<String> unresolvedSubProperties = listUnresolvedSubProperties(value);
-			resolveSubProperties(unresolvedSubProperties);
 			addResolvedProperty(propertyCategory, key, value);
+			List<String> unresolvedSubProperties = listUnresolvedSubProperties(value);
+			resolveSubProperties((String)key, unresolvedSubProperties);
 		}
 	}
 
@@ -174,16 +175,24 @@ public class CreateConfigPrototypeMojo extends AbstractMojo {
 		return propertyCategory + "-defaults.xml";
 	}
 
-	private void resolveSubProperties(List<String> unresolvedSubProperties) {
+	private void resolveSubProperties(String key, List<String> unresolvedSubProperties) {
 		boolean subPropertyResolved;
 		for (String subProperty : unresolvedSubProperties) {
 			subPropertyResolved = false;
+			if (resolvedProperties.get(UNRESOLVED_PROPERTIES) != null && resolvedProperties.get(UNRESOLVED_PROPERTIES).containsKey(key)){
+				//Already marked as unresolved
+				continue;
+			}
 			for (String category : templateProperties.keySet()) {
 				if (templateProperties.get(category).containsKey(subProperty)) {
-					addResolvedProperty(category, subProperty, (String) templateProperties.get(category).get(subProperty));
-					List<String> unresolvedSubSubProperties = listUnresolvedSubProperties(subProperty);
+					final String subPropertiesValue = (String) templateProperties.get(category).get(subProperty);
+					addResolvedProperty(category, subProperty, subPropertiesValue);
+					List<String> unresolvedSubSubProperties = listUnresolvedSubProperties(subPropertiesValue);
 					if (unresolvedSubProperties.size() > 0) {
-						resolveSubProperties(unresolvedSubSubProperties);
+						if (unresolvedSubProperties.size() == 1 && (unresolvedSubProperties.get(0).equals(key))){
+							continue;
+						}
+						resolveSubProperties(subProperty, unresolvedSubSubProperties);
 					}
 					subPropertyResolved = true;
 					break;
@@ -239,13 +248,14 @@ public class CreateConfigPrototypeMojo extends AbstractMojo {
 	}
 
 
-	public static void main(String[] args) {
-		CreateConfigPrototypeMojo mojo = new CreateConfigPrototypeMojo();
-		mojo.workingDir = new File("C:\\_Projects\\kuali-kfs");
+
+	//NOTE: Used for testing purposes only !!!!!
+	Map<String,Properties> debug(){
 		try {
-			mojo.execute();
+			execute();
+			return resolvedProperties;
 		} catch (MojoExecutionException e) {
-			e.printStackTrace();
+			throw new RuntimeException("Unable to debug",e);
 		}
 	}
 }
