@@ -44,7 +44,7 @@ public class CreateConfigPrototypeMojoTests extends TestCase {
 			FileUtils.deleteDirectory(workDir);
 		}
 		workDir.mkdirs();
-		unzip(workDir, new File(this.getClass().getClassLoader().getResource("build.zip").getFile()));
+		unzip(workDir, new File(this.getClass().getClassLoader().getResource("build.zipped").getFile()));
 		return workDir;
 	}
 
