@@ -611,7 +611,7 @@ public class DefaultPrototypeHelper implements PrototypeHelper {
 	public void installArtifact(InstallArtifactRequest installArtifactRequest) throws MojoExecutionException {
 		final Invoker invoker = new DefaultInvoker().setMavenHome(installArtifactRequest.getMavenHome());
 		final String additionalArguments = "";
-		getCaller().getLog().debug("Setting up properties for installing the artifact");
+		getCaller().getLog().debug("Setting up maven invocation request properties artifact - " + installArtifactRequest.getArtifactId());
 		Properties invocationRequestProperties = createInvocationRequestProperties(installArtifactRequest);
 		final InvocationRequest req = new DefaultInvocationRequest()
 			.setInteractive(false)
@@ -623,7 +623,6 @@ public class DefaultPrototypeHelper implements PrototypeHelper {
 		} catch (Exception e) {
 		}
 
-		try {
 			setupRequest(req, additionalArguments);
 
 			if (installArtifactRequest.getRepositoryId() == null) {
@@ -651,14 +650,7 @@ public class DefaultPrototypeHelper implements PrototypeHelper {
 			} catch (MavenInvocationException e) {
 				throw new MojoExecutionException("Failed to invoke Maven build.", e);
 			}
-		} finally {
-			/*
-										if ( settingsFile != null && settingsFile.exists() && !settingsFile.delete() )
-										{
-										settingsFile.deleteOnExit();
-										}
-									*/
-		}
+
 	}
 
 	private Properties createInvocationRequestProperties(InstallArtifactRequest request) throws MojoExecutionException {
@@ -674,6 +666,9 @@ public class DefaultPrototypeHelper implements PrototypeHelper {
 
 			if (request.getRepositoryId() != null) {
 				result.put("repositoryId", request.getRepositoryId());
+			}
+			if (request.getRepositoryUrl() != null) {
+				result.put("url", request.getRepositoryUrl());
 			}
 			if (request.getSources() != null) {
 				result.put("sources", zipSourcesIfRequired(request.getSources()).getCanonicalPath());

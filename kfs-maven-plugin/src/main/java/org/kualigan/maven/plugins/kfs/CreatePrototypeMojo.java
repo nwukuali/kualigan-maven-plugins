@@ -143,6 +143,11 @@ public class CreatePrototypeMojo extends AbstractMojo {
     @Parameter(property="repositoryId")
     protected String repositoryId;
 
+		/**
+     */
+    @Parameter(property="repositoryUrl")
+    protected String repositoryUrl;
+
     /**
      * The {@code M2_HOME} parameter to use for forked Maven invocations.
      *

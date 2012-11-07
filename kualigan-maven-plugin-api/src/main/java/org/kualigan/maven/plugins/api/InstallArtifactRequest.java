@@ -14,6 +14,7 @@ public class InstallArtifactRequest {
 	private String packaging;
 	private File sources;
 	private String repositoryId;
+	private String repositoryUrl;
 	private ArtifactType artifactType;
 
 	public static InstallArtifactRequest createCore(File mavenHome, File artifact, String groupId, String artifactId, String version, File artifactSources) {
@@ -42,6 +43,13 @@ public class InstallArtifactRequest {
 		this.artifactId = String.format("%s-%s",artifactId,artifactType.name().toLowerCase());
 		this.packaging = resolvePackaging(artifactType);
 		this.artifactType = artifactType;
+	}
+
+	//TODO: Hack to get past issue of having a proper api for deploying artifacts
+	public InstallArtifactRequest deploy(String repositoryId, String repositoryUrl){
+		this.repositoryId = repositoryId;
+		this.repositoryUrl = repositoryUrl;
+		return this;
 	}
 
 	public File getArtifact() {
@@ -78,6 +86,10 @@ public class InstallArtifactRequest {
 
 	public String getGeneratePom() {
 		return String.valueOf(!artifactType.equals(ArtifactType.PARENT));
+	}
+
+	public String getRepositoryUrl() {
+		return repositoryUrl;
 	}
 
 	private String resolvePackaging(ArtifactType artifactType) {
