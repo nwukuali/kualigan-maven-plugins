@@ -213,7 +213,7 @@ public class CreatePrototypeMojo extends AbstractMojo {
             final File prototypeJar = helper.repack(file, artifactId);
 						helper.installArtifact(InstallArtifactRequest.createParent(getMavenHome(), generatePom(map), groupId, artifactId, version));
 						helper.installArtifact(InstallArtifactRequest.createOverlay(getMavenHome(), file, groupId, artifactId, version));
-            helper.installArtifact(InstallArtifactRequest.createCore(getMavenHome(), prototypeJar, groupId, artifactId, version, sources));
+            helper.installArtifact(InstallArtifactRequest.createCore(getMavenHome(), prototypeJar, groupId, artifactId, version, sources).deploy(repositoryId,repositoryUrl));
         }
         catch (Exception e) {
             throw new MojoExecutionException("Failed to create a new KFS Prototype",e);
