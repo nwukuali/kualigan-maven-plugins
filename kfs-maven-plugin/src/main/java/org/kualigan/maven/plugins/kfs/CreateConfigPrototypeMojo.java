@@ -55,6 +55,17 @@ public class CreateConfigPrototypeMojo extends AbstractMojo {
 	@Parameter(defaultValue = "${maven.home}")
 	protected File mavenHome;
 
+
+    /**
+     */
+    @Parameter(property="repositoryId")
+    protected String repositoryId;
+
+		/**
+     */
+    @Parameter(property="repositoryUrl")
+    protected String repositoryUrl;
+
 	private Map<String, Properties> templateProperties;
 	private Map<String, Properties> resolvedProperties;
 	private static final String DEFAULT_PROPERTIES = "kfs";
@@ -166,7 +177,7 @@ public class CreateConfigPrototypeMojo extends AbstractMojo {
 
 	private void installArtifact(File zipArtifact) throws MojoExecutionException {
 		getLog().info("Installing properties as maven artifact");
-		helper.installArtifact(InstallArtifactRequest.createConfig(mavenHome,zipArtifact,groupId,artifactId,version));
+		helper.installArtifact(InstallArtifactRequest.createConfig(mavenHome,zipArtifact,groupId,artifactId,version).deploy(repositoryId,repositoryUrl));
 	}
 
 	private String getPropertyFileName(String propertyCategory) {
