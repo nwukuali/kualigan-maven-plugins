@@ -132,7 +132,8 @@ public class CreateConfigPrototypeMojo extends AbstractMojo {
 
 				final Properties properties = resolvedProperties.get(propertiesCategory);
 				for (Object propKey : properties.keySet()) {
-					writer.append(String.format("\t<param name=\"%s\">%s</param>\r\n", (String) propKey, properties.get(propKey)));
+					String propValue = (String) properties.get(propKey);
+					writer.append(String.format("\t<param name=\"%s\">%s</param>\r\n", propKey, filterIfRequired(propValue)));
 				}
 				writer.append("</config>\r\n");
 				writer.flush();
@@ -238,6 +239,13 @@ public class CreateConfigPrototypeMojo extends AbstractMojo {
 
 	private File getPropertiesDir() {
 		return new File(workingDir, "build/properties");
+	}
+
+	private String filterIfRequired(String propValue) {
+		if (propValue.contains("&")) {
+			propValue = propValue.replaceAll("&", "&amp;");
+		}
+		return propValue;
 	}
 
 	private class FilenameFilter implements java.io.FilenameFilter {
