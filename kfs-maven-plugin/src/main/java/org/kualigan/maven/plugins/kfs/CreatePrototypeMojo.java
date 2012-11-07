@@ -130,7 +130,7 @@ public class CreatePrototypeMojo extends AbstractMojo {
     /**
      * Assembled sources file.
      */
-    @Parameter(property="sources")
+    @Parameter(property="sourcesDir")
     protected File sources;
 
     /**
