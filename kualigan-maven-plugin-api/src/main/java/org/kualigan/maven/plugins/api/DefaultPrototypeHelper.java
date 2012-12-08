@@ -250,7 +250,7 @@ public class DefaultPrototypeHelper implements PrototypeHelper {
      * @param excludes Comma separated list of file patterns to exclude i.e. <code>**&#47;*.xml,
      *                 **&#47;*.properties</code>
      */
-    protected void unpack(final File file, final File location, final String includes, final String excludes) throws MojoExecutionException {
+    public void unpack(final File file, final File location, final String includes, final String excludes) throws MojoExecutionException {
         try {
             logUnpack(file, location, includes, excludes);
 
@@ -298,7 +298,7 @@ public class DefaultPrototypeHelper implements PrototypeHelper {
      * @param excludes Comma separated list of file patterns to exclude i.e. <code>**&#47;*.xml,
      *                 **&#47;*.properties</code>
      */
-    protected void pack(final File file, final File location, final String includes, final String excludes) throws MojoExecutionException {
+    public void pack(final File file, final File location, final String includes, final String excludes) throws MojoExecutionException {
         try {
 
             final Archiver archiver;
@@ -510,24 +510,24 @@ public class DefaultPrototypeHelper implements PrototypeHelper {
         final InvocationRequest req = new DefaultInvocationRequest()
             .setInteractive(false)
             .setProperties(new Properties() {{
-                                                        setProperty("pomFile", getTempPomPath());
-                                                        if (repositoryId != null) {
-                                                                setProperty("repositoryId", repositoryId);
-                                                        }
-                                                        if (sources != null) {
-                                                                try {
-                                                                        setProperty("sources", zipSourcesIfRequired(sources).getCanonicalPath());
-                                                                } catch (Exception e) {
-                                                                        throw new MojoExecutionException("Cannot get path for the sources file ", e);
-                                                                }
-                                                        }
-                                                        try {
-                                                                setProperty("file", artifact.getCanonicalPath());
-                                                        } catch (Exception e) {
-                                                                throw new MojoExecutionException("Cannot get path for the war file ", e);
-                                                        }
-                                                        setProperty("updateReleaseInfo", "true");
-                                                }});
+							setProperty("pomFile", getTempPomPath());
+							if (repositoryId != null) {
+											setProperty("repositoryId", repositoryId);
+							}
+							if (sources != null) {
+										try {
+														setProperty("sources", zipSourcesIfRequired(sources).getCanonicalPath());
+										} catch (Exception e) {
+														throw new MojoExecutionException("Cannot get path for the sources file ", e);
+										}
+							}
+							try {
+											setProperty("file", artifact.getCanonicalPath());
+							} catch (Exception e) {
+											throw new MojoExecutionException("Cannot get path for the war file ", e);
+							}
+							setProperty("updateReleaseInfo", "true");
+			}});
 
         getCaller().getLog().debug("Properties used for installArtifact are:");
         try {

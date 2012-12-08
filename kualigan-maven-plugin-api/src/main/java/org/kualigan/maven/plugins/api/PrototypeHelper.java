@@ -36,6 +36,10 @@ public interface PrototypeHelper {
 
     File repack(final File file, final String artifactId) throws MojoExecutionException;
 
+		void unpack(final File file, final File location, final String includes, final String excludes) throws MojoExecutionException;
+
+		void pack(final File file, final File location, final String includes, final String excludes) throws MojoExecutionException;
+
     void extractTempPom() throws MojoExecutionException;
 
     void setCaller(final AbstractMojo caller);
