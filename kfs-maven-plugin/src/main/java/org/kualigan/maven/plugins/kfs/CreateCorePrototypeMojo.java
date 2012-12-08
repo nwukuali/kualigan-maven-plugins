@@ -15,12 +15,11 @@
  */
 package org.kualigan.maven.plugins.kfs;
 
-import org.kualigan.maven.plugins.api.InstallArtifactRequest;
-
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
+import org.kualigan.maven.plugins.api.InstallArtifactRequest;
 
-import java.io.*;
+import java.io.File;
 
 /**
  * Creates a prototype from the given KFS project resource. A KFS project resource can be either
@@ -32,10 +31,10 @@ import java.io.*;
  * </ul>
  */
 @Mojo(
-	name = "create-prototype",
+	name = "create-core-prototype",
 	requiresProject = false
 )
-public class CreatePrototypeMojo extends AbstractPrototypeMojo {
+public class CreateCorePrototypeMojo extends AbstractPrototypeMojo {
 
 	/**
 	 * <p>Create a prototype</p>
@@ -47,17 +46,6 @@ public class CreatePrototypeMojo extends AbstractPrototypeMojo {
 	 * <li>Basically, use the install-file mojo and generate a POM from the archetype</li>
 	 * </ol>
 	 * </p>
-	 * <p>When using an svn repo:
-	 * <ol>
-	 * <li>Checkout the source.</li>
-	 * <li>Run migrate on it.</li>
-	 * </ol>
-	 * </p>
-	 * <p>When using a local path:
-	 * <ol>
-	 * <li>Delegate to migrate</li>
-	 * </ol>
-	 * </p>
 	 * <p/>
 	 * The basic way to understand how this works is the kfs-archetype is used to create kfs
 	 * maven projects, but it is dynamically generated. Then, source files are copied to it.
@@ -65,22 +53,10 @@ public class CreatePrototypeMojo extends AbstractPrototypeMojo {
 	protected void doExecute() throws MojoExecutionException {
 		try {
 			final File prototypeJar = helper.repack(file, artifactId);
-			final File prototypeWar = repackWar(file);
-
-			helper.installArtifact(InstallArtifactRequest.createOverlay(mavenHome, prototypeWar, groupId, artifactId, version).deploy(repositoryId, repositoryUrl));
 			helper.installArtifact(InstallArtifactRequest.createCore(mavenHome, prototypeJar, groupId, artifactId, version, sources).deploy(repositoryId, repositoryUrl));
 		} catch (Exception e) {
-			throw new MojoExecutionException("Failed to create a new KFS Prototype", e);
+			throw new MojoExecutionException("Failed to create a new Core KFS Prototype", e);
 		}
-	}
-
-	private File repackWar(File file) throws MojoExecutionException {
-		File tempWarLocation = new File(System.getProperty("java.io.tmpdir"),"overlayPrototypeWar");
-		File newPackedWar = new File(System.getProperty("java.io.tmpdir"),"overlay.zip");
-		tempWarLocation.deleteOnExit();
-		helper.unpack(file,tempWarLocation,null,"**/classes/**");
-		helper.pack(newPackedWar,tempWarLocation,"**/**", null);
-		return newPackedWar;
 	}
 
 

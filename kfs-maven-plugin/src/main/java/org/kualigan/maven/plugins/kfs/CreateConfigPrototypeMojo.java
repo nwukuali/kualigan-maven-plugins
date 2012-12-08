@@ -26,45 +26,10 @@ import java.util.regex.Pattern;
 	name = "create-config-prototype",
 	requiresProject = false
 )
-public class CreateConfigPrototypeMojo extends AbstractMojo {
-
-	@Component
-	protected PrototypeHelper helper;
+public class CreateConfigPrototypeMojo extends AbstractPrototypeMojo {
 
 	@Parameter(property = "workingDir", required = false, defaultValue = "./")
 	protected File workingDir;
-
-	/**
-	 */
-	@Parameter(property = "groupId", defaultValue = "org.kuali.kfs")
-	protected String groupId;
-
-	/**
-	 */
-	@Parameter(property = "artifactId", defaultValue = "kfs")
-	protected String artifactId;
-
-	/**
-	 */
-	@Parameter(property = "version", defaultValue = "5.0")
-	protected String version;
-
-	/**
-	 * The {@code M2_HOME} parameter to use for forked Maven invocations.
-	 */
-	@Parameter(defaultValue = "${maven.home}")
-	protected File mavenHome;
-
-
-    /**
-     */
-    @Parameter(property="repositoryId")
-    protected String repositoryId;
-
-		/**
-     */
-    @Parameter(property="repositoryUrl")
-    protected String repositoryUrl;
 
 	private Map<String, Properties> templateProperties;
 	private Map<String, Properties> resolvedProperties;
@@ -72,8 +37,7 @@ public class CreateConfigPrototypeMojo extends AbstractMojo {
 	private static final String UNRESOLVED_PROPERTIES = "unresolved";
 	public static final String ZIP_PROPERTIES_PATH = System.getProperty("java.io.tmpdir") + File.separator + "config-properties.zip";
 
-	public void execute() throws MojoExecutionException {
-		helper.setCaller(this);
+	protected void doExecute() throws MojoExecutionException{
 		verifyWorkingDir();
 		loadTemplateProperties();
 		resolveProperties();
@@ -124,7 +88,7 @@ public class CreateConfigPrototypeMojo extends AbstractMojo {
 			final String value = (String) defaultProperties.get(key);
 			addResolvedProperty(propertyCategory, key, value);
 			List<String> unresolvedSubProperties = listUnresolvedSubProperties(value);
-			resolveSubProperties((String)key, unresolvedSubProperties);
+			resolveSubProperties((String) key, unresolvedSubProperties);
 		}
 	}
 
@@ -177,7 +141,7 @@ public class CreateConfigPrototypeMojo extends AbstractMojo {
 
 	private void installArtifact(File zipArtifact) throws MojoExecutionException {
 		getLog().info("Installing properties as maven artifact");
-		helper.installArtifact(InstallArtifactRequest.createConfig(mavenHome,zipArtifact,groupId,artifactId,version).deploy(repositoryId,repositoryUrl));
+		helper.installArtifact(InstallArtifactRequest.createConfig(mavenHome, zipArtifact, groupId, artifactId, version).deploy(repositoryId, repositoryUrl));
 	}
 
 	private String getPropertyFileName(String propertyCategory) {
@@ -191,7 +155,7 @@ public class CreateConfigPrototypeMojo extends AbstractMojo {
 		boolean subPropertyResolved;
 		for (String subProperty : unresolvedSubProperties) {
 			subPropertyResolved = false;
-			if (resolvedProperties.get(UNRESOLVED_PROPERTIES) != null && resolvedProperties.get(UNRESOLVED_PROPERTIES).containsKey(key)){
+			if (resolvedProperties.get(UNRESOLVED_PROPERTIES) != null && resolvedProperties.get(UNRESOLVED_PROPERTIES).containsKey(key)) {
 				//Already marked as unresolved
 				continue;
 			}
@@ -201,7 +165,7 @@ public class CreateConfigPrototypeMojo extends AbstractMojo {
 					addResolvedProperty(category, subProperty, subPropertiesValue);
 					List<String> unresolvedSubSubProperties = listUnresolvedSubProperties(subPropertiesValue);
 					if (unresolvedSubProperties.size() > 0) {
-						if (unresolvedSubProperties.size() == 1 && (unresolvedSubProperties.get(0).equals(key))){
+						if (unresolvedSubProperties.size() == 1 && (unresolvedSubProperties.get(0).equals(key))) {
 							continue;
 						}
 						resolveSubProperties(subProperty, unresolvedSubSubProperties);
@@ -267,14 +231,13 @@ public class CreateConfigPrototypeMojo extends AbstractMojo {
 	}
 
 
-
 	//NOTE: Used for testing purposes only !!!!!
-	Map<String,Properties> debug(){
+	Map<String, Properties> debug() {
 		try {
-			execute();
+			doExecute();
 			return resolvedProperties;
 		} catch (MojoExecutionException e) {
-			throw new RuntimeException("Unable to debug",e);
+			throw new RuntimeException("Unable to debug", e);
 		}
 	}
 }
