@@ -34,7 +34,7 @@ public abstract class AbstractPrototypeMojo extends AbstractMojo {
 	protected String groupId;
 	/**
 	 */
-	@Parameter(property = "artifactId", defaultValue = "kfs")
+	@Parameter(property = "artifactId", defaultValue = "kfs-prototype")
 	protected String artifactId;
 	/**
 	 */
